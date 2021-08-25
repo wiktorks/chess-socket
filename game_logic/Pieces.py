@@ -1,6 +1,7 @@
 import numpy as np
-from itertools import product, combinations, permutations
+from itertools import product
 # formatter black
+
 
 class Piece:
     def __init__(self, x, y, color):
@@ -29,11 +30,11 @@ class Piece:
 
     def check_diagonal(self, direction, chessboard):
         available_moves = []
-        position = np.array([self.x, self.y]) + direction
+        position = np.array([self.x, self.y], dtype=int) + direction
 
         while np.all(position >= 0) and np.all(position < 8):
             if self.check_move(tuple(position)):
-                if chessboard[tuple(position)] == None:
+                if chessboard[tuple(position)] is None:
                     available_moves.append(
                         {'type': 'move', 'move': tuple(position)})
                     position += direction
@@ -89,7 +90,7 @@ class Bishop(Piece):
 class Knight(Piece):
     def get_moves(self, chessboard):
         available_moves = []
-        current_position = np.array([self.x, self.y])
+        current_position = np.array([self.x, self.y], dtype=int)
 
         for direction in [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]:
             next_position = current_position + direction
@@ -129,7 +130,7 @@ class Rook(Piece):
 
 class King(Piece):
     def is_check(self, chessboard):
-        current_position = np.array(self.get_position())
+        current_position = np.array(self.get_position(), dtype=int)
         all_attacks = []
         for direction in [[0, 1], [0, -1], [-1, 0], [1, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]]:
             attacks = list(filter(
@@ -156,7 +157,7 @@ class King(Piece):
 
     def get_moves(self, chessboard):
         moves = []
-        current_position = np.array([self.x, self.y])
+        current_position = np.array([self.x, self.y], dtype=int)
 
         for direction in [[0, 1], [0, -1], [-1, 0], [1, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]]:
             next_position = current_position + direction

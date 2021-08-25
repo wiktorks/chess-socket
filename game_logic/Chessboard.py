@@ -1,9 +1,7 @@
 import numpy as np
 from copy import deepcopy
-# from .Pieces import Piece, Pawn
-# from . import Pieces
-import Pieces
-# import Pieces as Pieces
+from . import Pieces
+# import Pieces
 
 
 class ChessError(Exception):
@@ -19,6 +17,9 @@ class ChessBoard:
         Piece = Pieces.Piece
         Pawn = Pieces.Pawn
         self.chess_fields = {}
+
+        # wrzuć do funkcji tworzenie szachownicy
+
         for i in range(8):
             for j in range(8):
                 self.chess_fields[f'{self.letters[i]}{j + 1}'] = (i, j)
@@ -47,9 +48,7 @@ class ChessBoard:
                     'W': self.chessboard[i, 0],
                     'B': self.chessboard[i, 7]
                 }
-        # testing
-        self.chessboard[5, 0] = None
-        self.chessboard[6, 0] = None
+        # ------
 
     def print_board(self):
         chessboard = np.flip(np.copy(self.chessboard), axis=1).transpose()
@@ -124,17 +123,74 @@ class ChessBoard:
 
         return piece, move.pop()
 
-    def online_terminal_game(self):
-        pass
+    def move_piece(self, piece, move):
+        if move['type'] == 'castling-long':
+            self.chessboard[piece.x, 2] = piece
+            self.chessboard[piece.get_position()] = None
+            rook = self.chessboard[piece.x, 0]
+            self.chessboard[piece.x, 3] = rook
+            self.chessboard[rook.get_position()] = None
+            # self.kings[self.turn] = piece
+
+        elif move['type'] == 'castling-short':
+            self.chessboard[6, piece.y] = piece
+            self.chessboard[piece.get_position()] = None
+            piece.move((6, piece.y))
+            rook = self.chessboard[7, piece.y]
+            self.chessboard[5, piece.y] = rook
+            self.chessboard[rook.get_position()] = None
+            rook.move((5, piece.y))
+            # self.kings[self.turn] = piece
+
+        else:
+            self.chessboard[tuple(move['move'])] = piece
+            self.chessboard[piece.get_position()] = None
+            piece.move(tuple(move['move']))
+
+        if str(piece) == 'K':
+            self.kings[self.turn] = piece
+        
+        self.turn = 'B' if self.turn == 'W' else 'W'
+
+    def get_game_status(self):
+        status = {}
+
+        check = False
+        enemy_king = self.kings['B' if self.turn == 'W' else 'W']
+        if enemy_king.is_check(self.chessboard):
+            check = True
+        
+        status['isCheck'] = check
+
+        end_game = False
+        try:
+            for row in self.chessboard:
+                for field in row:
+                    if isinstance(field, Pieces.Piece) and field.color != self.turn:
+                        moves = self.get_available_moves(
+                            field, enemy_turn=True)
+                        if moves:
+                            raise ChessError()
+            end_game = True
+        except ChessError:
+            pass
+        status['endGame'] = end_game
+        if end_game:
+            status['winner'] = self.turn if check else 'stalemate'
+
+        return status
 
     def local_terminal_game(self):
         print('--------------Chess Terminal game--------------')
         while True:
-            print('White turn') if self.turn == 'W' else print('Black turn')
+            if self.turn == 'W':
+                print('White turn')
+            else:
+                print('Black turn')
+
             self.print_board()
 
             piece, move = self.get_player_move_input()
-            print(str(piece), move)
 
             if move['type'] == 'castling-long':
                 self.chessboard[piece.x, 2] = piece
@@ -194,4 +250,4 @@ class ChessBoard:
 
 if __name__ == '__main__':
     board = ChessBoard()
-    board.game()
+    board.local_terminal_game()
